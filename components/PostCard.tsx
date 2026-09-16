@@ -11,7 +11,7 @@ export default function PostCard({ post }: { post: PostMeta }) {
         {formatDateKo(post.date)}
       </time>
       <h2 className="mt-2 font-serif text-xl font-semibold text-ink-900 group-hover:text-accent sm:text-2xl">
-        <Link href={`/posts/${post.slug}`} className="focus:outline-none">
+        <Link href={`/p/${post.slug}`} className="focus:outline-none">
           <span className="absolute inset-0 rounded-xl" aria-hidden />
           {post.title}
         </Link>
