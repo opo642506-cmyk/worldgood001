@@ -8,7 +8,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
   title: {
-    default: `${siteConfig.name} · ${siteConfig.tagline}`,
+    default: siteConfig.name,
     template: `%s · ${siteConfig.name}`,
   },
   description: siteConfig.description,
@@ -32,9 +32,7 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
+export default function RootLayout(props: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
@@ -42,7 +40,7 @@ export default function RootLayout({
       <body className="flex min-h-screen flex-col font-sans">
         <AdSenseScript />
         <Header />
-        <main className="flex-1">{children}</main>
+        <main className="flex-1">{props.children}</main>
         <Footer />
       </body>
     </html>
