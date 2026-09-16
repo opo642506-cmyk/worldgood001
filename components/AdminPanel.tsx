@@ -14,14 +14,14 @@ export default function AdminPanel() {
   const [codes, setCodes] = useState<ReferralCode[]>([]);
   const [code, setCode] = useState("");
   const [maxUses, setMaxUses] = useState(10);
-  const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
+  const [errText, setErrText] = useState("");
+  const [okText, setOkText] = useState("");
   const [loading, setLoading] = useState(false);
 
   const load = useCallback(async () => {
     const res = await fetch("/api/admin/referrals");
     if (!res.ok) {
-      setError("목록을 불러오지 못했습니다.");
+      setErrText("목록을 불러오지 못했습니다.");
       return;
     }
     const data = (await res.json()) as { codes: ReferralCode[] };
@@ -34,8 +34,8 @@ export default function AdminPanel() {
 
   async function onCreate(e: FormEvent) {
     e.preventDefault();
-    setError("");
-    setMessage("");
+    setErrText("");
+    setOkText("");
     setLoading(true);
     try {
       const res = await fetch("/api/admin/referrals", {
@@ -45,23 +45,23 @@ export default function AdminPanel() {
       });
       const data = (await res.json()) as { error?: string };
       if (!res.ok) {
-        setError(data.error || "생성에 실패했습니다.");
+        setErrText(data.error || "생성에 실패했습니다.");
         return;
       }
       setCode("");
       setMaxUses(10);
-      setMessage("코드를 만들었습니다.");
+      setOkText("코드를 만들었습니다.");
       await load();
     } catch {
-      setError("네트워크 오류가 발생했습니다.");
+      setErrText("네트워크 오류가 발생했습니다.");
     } finally {
       setLoading(false);
     }
   }
 
   async function setActive(target: string, active: boolean) {
-    setError("");
-    setMessage("");
+    setErrText("");
+    setOkText("");
     const res = await fetch(`/api/admin/referrals/${encodeURIComponent(target)}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -69,10 +69,10 @@ export default function AdminPanel() {
     });
     if (!res.ok) {
       const data = (await res.json()) as { error?: string };
-      setError(data.error || "변경에 실패했습니다.");
+      setErrText(data.error || "변경에 실패했습니다.");
       return;
     }
-    setMessage(active ? "코드를 활성화했습니다." : "코드를 비활성화했습니다.");
+    setOkText(active ? "코드를 활성화했습니다." : "코드를 비활성화했습니다.");
     await load();
   }
 
@@ -110,11 +110,11 @@ export default function AdminPanel() {
             />
           </label>
         </div>
-        {error ? (
-          <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
+        {errText ? (
+          <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{errText}</p>
         ) : null}
-        {message ? (
-          <p className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">{message}</p>
+        {okText ? (
+          <p className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">{okText}</p>
         ) : null}
         <button
           type="submit"
