@@ -34,7 +34,12 @@ export async function PATCH(req: Request, { params }: Props) {
   if (typeof body.active === "boolean") {
     entry.active = body.active;
   }
-  writeStore(store);
+  if (!writeStore(store)) {
+    return NextResponse.json(
+      { error: "추천 코드 저장소가 연결되지 않았습니다." },
+      { status: 503 },
+    );
+  }
 
   return NextResponse.json({ ok: true, code: entry });
 }

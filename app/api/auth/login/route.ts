@@ -33,7 +33,13 @@ export async function POST(req: Request) {
     );
   }
 
-  await setSessionCookie(user);
+  if (!(await setSessionCookie(user))) {
+    return NextResponse.json(
+      { error: "서버 로그인 설정이 완료되지 않았습니다." },
+      { status: 503 },
+    );
+  }
+
   return NextResponse.json({
     ok: true,
     user: { username: user.username, role: user.role },

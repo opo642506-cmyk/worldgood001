@@ -12,9 +12,9 @@
 - 가입: `/join` (추천 코드 필수)
 - 로그인: `/login`
 - 관리: `/admin` (관리자만 추천 코드 생성·목록·비활성)
-- AdSense용 광고 자리 (사이드바·본문 중간) + `NEXT_PUBLIC_ADSENSE_CLIENT`
+- AdSense용 광고 자리 (배너·사이드바·본문 중간) + 클라이언트·단위 ID 환경변수
 - SEO: 메타데이터, Open Graph, `sitemap.ts`, `robots.ts`
-- 샘플·본문 글 16편 (영문 kebab-case 슬러그)
+- 본문 글 30편 (영문 kebab-case 슬러그)
 
 ## 짧은 주소 / 도메인
 
@@ -45,7 +45,17 @@ npm run build
 npm start
 ```
 
-첫 실행 시 `data/store.json`이 생성되며, 관리자 계정과 초기 추천 코드가 시드됩니다. (`data/store.json`은 gitignore)
+정적 검사:
+
+```bash
+npm run lint
+```
+
+현재 `lint`는 별도 ESLint 의존성을 추가하지 않고 TypeScript 오류를 검사합니다.
+
+첫 회원 가입이나 추천 코드 변경 시 `data/store.json`이 생성되며, 관리자 계정과 초기 추천 코드가 시드됩니다. (`data/store.json`은 gitignore)
+
+개발 환경에서 환경 변수를 비워 두면 관리자 `admin` / `ChangeMeAdmin123!`이 임시로 사용됩니다. 이 계정은 로컬 확인 전용이며, 배포 전에는 반드시 `ADMIN_USERNAME`, `ADMIN_PASSWORD`, `SESSION_SECRET`을 실제 값으로 설정하세요.
 
 ## 회원·추천 코드·관리자
 
@@ -78,17 +88,17 @@ tags: ["태그1", "태그2"]
 
 1. [Google AdSense](https://www.google.com/adsense/)에서 사이트를 등록·승인받습니다.
 2. `.env.local`에 `NEXT_PUBLIC_ADSENSE_CLIENT`를 넣습니다.
-3. `public/ads.txt`에 AdSense가 안내하는 한 줄을 넣어 배포합니다. (**가짜 publisher ID 금지**)
-4. 광고 단위 ID는 `components/AdSlot.tsx`의 `data-ad-slot`에 넣습니다.
+3. AdSense에서 발급한 광고 단위 ID를 `NEXT_PUBLIC_ADSENSE_SLOT_BANNER`, `NEXT_PUBLIC_ADSENSE_SLOT_SIDEBAR`, `NEXT_PUBLIC_ADSENSE_SLOT_IN_ARTICLE`에 넣습니다.
+4. `public/ads.txt`에 AdSense가 안내하는 한 줄을 넣어 배포합니다. (**가짜 publisher ID 금지**)
 
 환경 변수가 비어 있으면 안내 플레이스홀더가 표시됩니다.
 
 ## Vercel 배포
 
 1. 저장소를 Vercel에 Import
-2. Environment Variables: `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_ADSENSE_CLIENT`, `SESSION_SECRET`, `ADMIN_USERNAME`, `ADMIN_PASSWORD`
+2. Environment Variables: `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_ADSENSE_CLIENT`, 세 광고 단위 ID, `SESSION_SECRET`, `ADMIN_USERNAME`, `ADMIN_PASSWORD`
 3. 배포 후 커스텀 도메인 연결 (예: hyeonjang.kr)
-4. 서버리스 환경에서는 로컬 파일 스토어(`data/store.json`)가 영속적이지 않을 수 있습니다. 개인 `npm run dev`·단일 인스턴스에 맞춰 설계되었습니다. 프로덕션에서는 DB로 옮기는 것을 권장합니다.
+4. 회원·추천인 기능은 현재 로컬 파일 스토어(`data/store.json`)를 사용합니다. Vercel 서버리스의 읽기 전용 파일 시스템에서는 저장이 보장되지 않으므로 가입·코드 변경을 성공 처리하지 않습니다. 공개 운영 전에는 Postgres 등 영속 DB로 `lib/store.ts`를 교체해야 합니다.
 
 ## 폴더 구조 (요약)
 

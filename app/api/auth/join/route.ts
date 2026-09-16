@@ -83,9 +83,19 @@ export async function POST(req: Request) {
 
   code.usedCount += 1;
   store.users.push(user);
-  writeStore(store);
+  if (!writeStore(store)) {
+    return NextResponse.json(
+      { error: "회원 저장소가 연결되지 않았습니다. 관리자에게 문의해 주세요." },
+      { status: 503 },
+    );
+  }
 
-  await setSessionCookie(user);
+  if (!(await setSessionCookie(user))) {
+    return NextResponse.json(
+      { error: "서버 로그인 설정이 완료되지 않았습니다." },
+      { status: 503 },
+    );
+  }
 
   return NextResponse.json({
     ok: true,
