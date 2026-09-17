@@ -30,7 +30,12 @@ export type StoreData = {
 const dataDir = path.join(process.cwd(), "data");
 const storePath = path.join(dataDir, "store.json");
 
-const SUPABASE_URL = process.env.SUPABASE_URL?.trim().replace(/\/+$/, "") || "";
+const SUPABASE_URL = (() => {
+  const raw = process.env.SUPABASE_URL?.trim().replace(/\/+$/, "") || "";
+  if (!raw) return "";
+  // https://xxxx.supabase.co 와 https://xxxx.supabase.co/rest/v1 둘 다 허용
+  return /\/rest\/v1$/.test(raw) ? raw : `${raw}/rest/v1`;
+})();
 const SUPABASE_SERVICE_ROLE_KEY =
   process.env.SUPABASE_SERVICE_ROLE_KEY?.trim() || "";
 
