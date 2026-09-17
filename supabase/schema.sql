@@ -1,4 +1,4 @@
--- 현장기록 회원·추천코드 저장소 (단일 행 JSON 방식)
+-- 하루기록 회원·추천코드 저장소 (단일 행 JSON 방식)
 -- Supabase SQL Editor에서 실행하세요.
 
 create table if not exists public.hj_store (

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "이용약관",
-  description: "현장기록 이용에 관한 기본 안내입니다.",
+  description: "하루기록 이용에 관한 기본 안내입니다.",
 };
 
 export default function TermsPage() {
@@ -17,7 +17,7 @@ export default function TermsPage() {
 
         <h2>1. 서비스의 성격</h2>
         <p>
-          현장기록은 현장 경험, 사람과 일에 관한 생각, 실무 도구 사용기를
+          하루기록은 하루의 경험, 사람과 일에 관한 생각, 실무 도구 사용기를
           기록하고 공유하는 개인 블로그입니다. 글은 작성자의 경험과 관점을
           담으며, 특정 상황의 법률·노무·재무 자문을 대신하지 않습니다.
         </p>

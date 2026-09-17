@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "개인정보처리방침",
-  description: "현장기록의 개인정보 처리와 쿠키 사용에 관한 안내입니다.",
+  description: "하루기록의 개인정보 처리와 쿠키 사용에 관한 안내입니다.",
 };
 
 export default function PrivacyPage() {

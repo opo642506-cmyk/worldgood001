@@ -4,7 +4,7 @@ import { readStore } from "@/lib/store";
 
 export const metadata: Metadata = {
   title: "가입",
-  description: "추천 코드로 현장기록 회원에 가입합니다.",
+  description: "추천 코드로 하루기록 회원에 가입합니다.",
   robots: { index: false, follow: true },
 };
 

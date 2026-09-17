@@ -3,7 +3,7 @@ import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "문의",
-  description: "현장기록에 관한 문의와 정정 요청을 보내는 방법입니다.",
+  description: "하루기록에 관한 문의와 정정 요청을 보내는 방법입니다.",
 };
 
 export default function ContactPage() {
