@@ -98,7 +98,21 @@ tags: ["태그1", "태그2"]
 1. 저장소를 Vercel에 Import
 2. Environment Variables: `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_ADSENSE_CLIENT`, 세 광고 단위 ID, `SESSION_SECRET`, `ADMIN_USERNAME`, `ADMIN_PASSWORD`
 3. 배포 후 커스텀 도메인 연결 (예: hyeonjang.kr)
-4. 회원·추천인 기능은 현재 로컬 파일 스토어(`data/store.json`)를 사용합니다. Vercel 서버리스의 읽기 전용 파일 시스템에서는 저장이 보장되지 않으므로 가입·코드 변경을 성공 처리하지 않습니다. 공개 운영 전에는 Postgres 등 영속 DB로 `lib/store.ts`를 교체해야 합니다.
+4. 회원·추천인 저장소는 아래 **Supabase 연결** 섹션을 참고하세요. 환경변수가 없으면 로컬 파일 스토어(`data/store.json`)로 폴백하며, Vercel 서버리스의 읽기 전용 파일 시스템에서는 저장이 보장되지 않습니다.
+
+## Supabase 연결 (회원·추천 코드 영속 저장)
+
+회원·추천 코드 데이터를 Vercel 등 서버리스 환경에서도 영속 저장하려면 Supabase를 연결합니다. SDK 없이 REST fetch만 사용하므로 의존성 추가가 없습니다.
+
+1. [Supabase](https://supabase.com/)에서 프로젝트를 생성합니다.
+2. SQL Editor에서 `supabase/schema.sql` 전체를 실행합니다. (`hj_store` 테이블 생성 + RLS 활성화)
+3. 프로젝트 설정 > API에서 **Project URL**과 **service_role** 키를 복사합니다.
+4. Vercel(또는 `.env.local`)에 환경변수를 설정합니다:
+   - `SUPABASE_URL` = Project URL (예: `https://xxxx.supabase.co`)
+   - `SUPABASE_SERVICE_ROLE_KEY` = service_role 키 (**서버 전용** — `NEXT_PUBLIC_` 접두사 금지, 브라우저에 노출되면 안 됩니다)
+5. 환경변수를 설정한 후 **재배포**합니다.
+
+두 환경변수가 모두 설정되면 회원·추천 코드가 `hj_store` 테이블(id=1 단일 행 JSON, upsert)에 저장됩니다. 설정되어 있지 않으면 기존대로 로컬 파일 스토어(`data/store.json`)로 동작하므로 로컬 개발에는 영향이 없습니다.
 
 ## 폴더 구조 (요약)
 

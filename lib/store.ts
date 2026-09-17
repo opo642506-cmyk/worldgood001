@@ -30,23 +30,67 @@ export type StoreData = {
 const dataDir = path.join(process.cwd(), "data");
 const storePath = path.join(dataDir, "store.json");
 
+const SUPABASE_URL = process.env.SUPABASE_URL?.trim().replace(/\/+$/, "") || "";
+const SUPABASE_SERVICE_ROLE_KEY =
+  process.env.SUPABASE_SERVICE_ROLE_KEY?.trim() || "";
+
+const STORE_TABLE = "hj_store";
+const STORE_ROW_ID = 1;
+
+function useSupabase(): boolean {
+  return SUPABASE_URL.length > 0 && SUPABASE_SERVICE_ROLE_KEY.length > 0;
+}
+
 function emptyStore(): StoreData {
   return { users: [], referralCodes: [] };
 }
 
-export function ensureStore(): StoreData {
-  // ponytail: serverless(Vercel)는 읽기전용 FS — 쓰기 시도가 EROFS로 죽으므로
-  // 읽기 실패 시 쓰지 않고 시드만 반환한다. 영속화가 필요하면 DB로 이전(README 참고).
-  try {
-    const raw = fs.readFileSync(storePath, "utf8");
-    const parsed = JSON.parse(raw) as StoreData;
-    if (Array.isArray(parsed.users) && Array.isArray(parsed.referralCodes)) {
-      return parsed;
-    }
-  } catch {
-    // 파일 없음/손상 — 아래에서 시드 반환
+async function supabaseRequest<T>(
+  path: string,
+  init: RequestInit = {},
+): Promise<{ ok: boolean; status: number; data: T | null }> {
+  const res = await fetch(`${SUPABASE_URL}${path}`, {
+    ...init,
+    headers: {
+      apikey: SUPABASE_SERVICE_ROLE_KEY,
+      Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+      "Content-Type": "application/json",
+      ...(init.headers ?? {}),
+    },
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    return { ok: false, status: res.status, data: null };
   }
-  return seedStore();
+  const text = await res.text();
+  const data = text ? (JSON.parse(text) as T) : null;
+  return { ok: true, status: res.status, data };
+}
+
+async function supabaseReadStore(): Promise<StoreData | null> {
+  const query = `/${STORE_TABLE}?select=data&id=eq.${STORE_ROW_ID}`;
+  const { ok, data } = await supabaseRequest<Array<{ data: StoreData | null }>>(query);
+  if (!ok) return null;
+  const row = data?.[0];
+  if (!row?.data) return null;
+  const parsed = row.data as StoreData;
+  if (Array.isArray(parsed.users) && Array.isArray(parsed.referralCodes)) {
+    return parsed;
+  }
+  return null;
+}
+
+async function supabaseWriteStore(store: StoreData): Promise<boolean> {
+  const { ok } = await supabaseRequest(`/${STORE_TABLE}`, {
+    method: "POST",
+    headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+    body: JSON.stringify({
+      id: STORE_ROW_ID,
+      data: store,
+      updated_at: new Date().toISOString(),
+    }),
+  });
+  return ok;
 }
 
 function seedStore(): StoreData {
@@ -85,11 +129,20 @@ function seedStore(): StoreData {
   return { users, referralCodes: codes };
 }
 
-export function readStore(): StoreData {
-  return ensureStore();
+function fileReadStore(): StoreData {
+  try {
+    const raw = fs.readFileSync(storePath, "utf8");
+    const parsed = JSON.parse(raw) as StoreData;
+    if (Array.isArray(parsed.users) && Array.isArray(parsed.referralCodes)) {
+      return parsed;
+    }
+  } catch {
+    // 파일 없음/손상 — 시드 반환
+  }
+  return seedStore();
 }
 
-export function writeStore(data: StoreData): boolean {
+function fileWriteStore(data: StoreData): boolean {
   try {
     if (!fs.existsSync(dataDir)) {
       fs.mkdirSync(dataDir, { recursive: true });
@@ -97,20 +150,39 @@ export function writeStore(data: StoreData): boolean {
     fs.writeFileSync(storePath, JSON.stringify(data, null, 2), "utf8");
     return true;
   } catch {
-    // ponytail: 파일 저장소의 한계 — 실패를 호출자에게 알려 성공 위장을 막고, 운영 DB로 이전한다.
+    // ponytail: 파일 저장소의 한계 — 실패를 호출자에게 알려 성공 위장을 막는다.
     return false;
   }
 }
 
-export function findUserByUsername(username: string): User | undefined {
-  const store = readStore();
+export async function readStore(): Promise<StoreData> {
+  if (useSupabase()) {
+    const remote = await supabaseReadStore();
+    if (remote) return remote;
+    // ponytail: 빈 테이블이면 시드를 upsert해 초기화. 네트워크 실패 시 null → 파일 폴백.
+    if (await supabaseWriteStore(seedStore())) {
+      return seedStore();
+    }
+  }
+  return fileReadStore();
+}
+
+export async function writeStore(data: StoreData): Promise<boolean> {
+  if (useSupabase()) {
+    return supabaseWriteStore(data);
+  }
+  return fileWriteStore(data);
+}
+
+export async function findUserByUsername(username: string): Promise<User | undefined> {
+  const store = await readStore();
   return store.users.find(
     (u) => u.username.toLowerCase() === username.toLowerCase() && u.active,
   );
 }
 
-export function findReferral(code: string): ReferralCode | undefined {
-  const store = readStore();
+export async function findReferral(code: string): Promise<ReferralCode | undefined> {
+  const store = await readStore();
   return store.referralCodes.find(
     (c) => c.code.toUpperCase() === code.toUpperCase(),
   );

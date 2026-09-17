@@ -132,7 +132,7 @@ export async function getSession(): Promise<SessionPayload | null> {
   const session = verifySession(token);
   if (!session) return null;
   // Ensure user still exists/active
-  const user = findUserByUsername(session.username);
+  const user = await findUserByUsername(session.username);
   if (!user || user.role !== session.role) return null;
   return session;
 }

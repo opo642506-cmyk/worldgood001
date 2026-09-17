@@ -10,8 +10,8 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-export default function JoinPage() {
-  const codes = readStore().referralCodes.filter(
+export default async function JoinPage() {
+  const codes = (await readStore()).referralCodes.filter(
     (code) => code.active && code.usedCount < code.maxUses,
   );
 
