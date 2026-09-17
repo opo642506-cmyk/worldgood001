@@ -72,17 +72,21 @@ async function supabaseRequest<T>(
   return { ok: true, status: res.status, data };
 }
 
-async function supabaseReadStore(): Promise<StoreData | null> {
+type SupabaseReadResult = { ok: boolean; store: StoreData | null };
+
+async function supabaseReadStore(): Promise<SupabaseReadResult> {
   const query = `/${STORE_TABLE}?select=data&id=eq.${STORE_ROW_ID}`;
-  const { ok, data } = await supabaseRequest<Array<{ data: StoreData | null }>>(query);
-  if (!ok) return null;
-  const row = data?.[0];
-  if (!row?.data) return null;
-  const parsed = row.data as StoreData;
-  if (Array.isArray(parsed.users) && Array.isArray(parsed.referralCodes)) {
-    return parsed;
+  const { ok, data } = await supabaseRequest<{ data: StoreData | null }[]>(query);
+  if (!ok) return { ok: false, store: null };
+  const parsed = data?.[0]?.data as StoreData | undefined;
+  if (parsed && Array.isArray(parsed.users) && Array.isArray(parsed.referralCodes)) {
+    return { ok: true, store: parsed };
   }
-  return null;
+  return { ok: true, store: null };
+}
+
+function isEmptyStore(store: StoreData): boolean {
+  return store.users.length === 0 && store.referralCodes.length === 0;
 }
 
 async function supabaseWriteStore(store: StoreData): Promise<boolean> {
@@ -163,11 +167,15 @@ function fileWriteStore(data: StoreData): boolean {
 export async function readStore(): Promise<StoreData> {
   if (useSupabase()) {
     const remote = await supabaseReadStore();
-    if (remote) return remote;
-    // ponytail: 빈 테이블이면 시드를 upsert해 초기화. 네트워크 실패 시 null → 파일 폴백.
-    if (await supabaseWriteStore(seedStore())) {
-      return seedStore();
+    if (remote.ok) {
+      if (remote.store && !isEmptyStore(remote.store)) return remote.store;
+      const seeded = seedStore();
+      // ponytail: 스키마가 만든 빈 행이면 시드(관리자·초기 추천코드)를 upsert해 초기화한다.
+      if (await supabaseWriteStore(seeded)) return seeded;
+      return remote.store ?? seeded;
     }
+    // 읽기 실패 시 원격 데이터를 덮어쓰지 않도록 쓰기 없이 시드만 반환한다.
+    return seedStore();
   }
   return fileReadStore();
 }
